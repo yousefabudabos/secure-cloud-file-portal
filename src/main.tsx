@@ -10,6 +10,14 @@ const cognitoAuthConfig = {
   redirect_uri: import.meta.env.VITE_APP_URL,
   response_type: 'code',
   scope: 'openid email',
+
+  onSigninCallback: () => {
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname,
+    )
+  },
 }
 
 createRoot(document.getElementById('root')!).render(
