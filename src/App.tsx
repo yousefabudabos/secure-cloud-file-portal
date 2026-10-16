@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { useAuth } from 'react-oidc-context'
 import './App.css'
@@ -142,6 +141,45 @@ function App() {
     }
   }
 
+  const handleDownload = async (file: FileItem) => {
+    if (!auth.user?.access_token) {
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/downloads`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.user.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: file.key,
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          `Download request failed: ${response.status}`,
+        )
+      }
+
+      const data = await response.json()
+
+      const link = document.createElement('a')
+      link.href = data.downloadUrl
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (error) {
+      console.error(error)
+      alert('Download failed.')
+    }
+  }
+
   const handleSignOut = async () => {
     const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID
     const logoutUri = import.meta.env.VITE_APP_URL
@@ -243,6 +281,7 @@ function App() {
               <th>File</th>
               <th>Size</th>
               <th>Last modified</th>
+              <th>Action</th>
             </tr>
           </thead>
 
@@ -257,6 +296,11 @@ function App() {
                   {new Date(
                     file.lastModified,
                   ).toLocaleString()}
+                </td>
+                <td>
+                  <button onClick={() => handleDownload(file)}>
+                    Download
+                  </button>
                 </td>
               </tr>
             ))}
