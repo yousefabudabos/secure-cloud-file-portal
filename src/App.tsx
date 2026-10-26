@@ -29,6 +29,19 @@ function App() {
   const [uploading, setUploading] = useState(false)
   const [uploadMessage, setUploadMessage] = useState('')
 
+  const [deletingKey, setDeletingKey] = useState('')
+  const [deleteMessage, setDeleteMessage] = useState('')
+
+  const getDisplayName = (key: string) => {
+    const filePart = key.split('/').pop() ?? key
+
+    if (filePart.length > 37) {
+      return filePart.slice(37)
+    }
+
+    return filePart
+  }
+
   const loadFiles = async () => {
     if (!auth.user?.access_token) {
       return
@@ -180,6 +193,56 @@ function App() {
     }
   }
 
+  const handleDelete = async (file: FileItem) => {
+    if (!auth.user?.access_token) {
+      return
+    }
+
+    const fileName = getDisplayName(file.key)
+
+    const confirmed = window.confirm(
+      `Delete "${fileName}"?\n\nThis file will no longer be available in the portal.`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setDeletingKey(file.key)
+    setDeleteMessage('')
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/files`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${auth.user.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: file.key,
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          `Delete request failed: ${response.status}`,
+        )
+      }
+
+      setDeleteMessage('File deleted successfully.')
+
+      await loadFiles()
+    } catch (error) {
+      console.error(error)
+      setDeleteMessage('Delete failed.')
+    } finally {
+      setDeletingKey('')
+    }
+  }
+
   const handleSignOut = async () => {
     const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID
     const logoutUri = import.meta.env.VITE_APP_URL
@@ -264,6 +327,8 @@ function App() {
 
       <h2>Files</h2>
 
+      {deleteMessage && <p>{deleteMessage}</p>}
+
       {loadingFiles && <p>Loading files...</p>}
 
       {filesError && <p>{filesError}</p>}
@@ -281,25 +346,39 @@ function App() {
               <th>File</th>
               <th>Size</th>
               <th>Last modified</th>
-              <th>Action</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {files.map((file) => (
               <tr key={file.key}>
-                <td>{file.key}</td>
+                <td>{getDisplayName(file.key)}</td>
+
                 <td>
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </td>
+
                 <td>
                   {new Date(
                     file.lastModified,
                   ).toLocaleString()}
                 </td>
+
                 <td>
                   <button onClick={() => handleDownload(file)}>
                     Download
+                  </button>
+
+                  {' '}
+
+                  <button
+                    onClick={() => handleDelete(file)}
+                    disabled={deletingKey === file.key}
+                  >
+                    {deletingKey === file.key
+                      ? 'Deleting...'
+                      : 'Delete'}
                   </button>
                 </td>
               </tr>
