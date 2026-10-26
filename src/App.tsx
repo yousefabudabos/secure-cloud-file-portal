@@ -32,6 +32,9 @@ function App() {
   const [deletingKey, setDeletingKey] = useState('')
   const [deleteMessage, setDeleteMessage] = useState('')
 
+  const [sharingKey, setSharingKey] = useState('')
+  const [shareMessage, setShareMessage] = useState('')
+
   const getDisplayName = (key: string) => {
     const filePart = key.split('/').pop() ?? key
 
@@ -193,6 +196,62 @@ function App() {
     }
   }
 
+  const handleShare = async (file: FileItem) => {
+    if (!auth.user?.access_token) {
+      return
+    }
+
+    const recipientEmail = window.prompt(
+      `Share "${getDisplayName(file.key)}" with employee email:`,
+    )?.trim().toLowerCase()
+
+    if (!recipientEmail) {
+      return
+    }
+
+    if (!recipientEmail.includes('@')) {
+      alert('Please enter a valid email address.')
+      return
+    }
+
+    setSharingKey(file.key)
+    setShareMessage('')
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/shares`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.user.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: file.key,
+            recipientEmail,
+          }),
+        },
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || `Share request failed: ${response.status}`,
+        )
+      }
+
+      setShareMessage(
+        `File shared successfully with ${recipientEmail}.`,
+      )
+    } catch (error) {
+      console.error(error)
+      setShareMessage('Share failed.')
+    } finally {
+      setSharingKey('')
+    }
+  }
+
   const handleDelete = async (file: FileItem) => {
     if (!auth.user?.access_token) {
       return
@@ -327,6 +386,7 @@ function App() {
 
       <h2>Files</h2>
 
+      {shareMessage && <p>{shareMessage}</p>}
       {deleteMessage && <p>{deleteMessage}</p>}
 
       {loadingFiles && <p>Loading files...</p>}
@@ -368,6 +428,17 @@ function App() {
                 <td>
                   <button onClick={() => handleDownload(file)}>
                     Download
+                  </button>
+
+                  {' '}
+
+                  <button
+                    onClick={() => handleShare(file)}
+                    disabled={sharingKey === file.key}
+                  >
+                    {sharingKey === file.key
+                      ? 'Sharing...'
+                      : 'Share'}
                   </button>
 
                   {' '}
