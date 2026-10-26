@@ -18,6 +18,14 @@ type UploadResponse = {
   maxFileSize: number
 }
 
+type SharedItem = {
+  shareId: string
+  objectKey: string
+  fileName: string
+  ownerSub: string
+  createdAt: string
+}
+
 function App() {
   const auth = useAuth()
 
@@ -34,6 +42,10 @@ function App() {
 
   const [sharingKey, setSharingKey] = useState('')
   const [shareMessage, setShareMessage] = useState('')
+
+  const [sharedFiles, setSharedFiles] = useState<SharedItem[]>([])
+  const [loadingShared, setLoadingShared] = useState(false)
+  const [sharedError, setSharedError] = useState('')
 
   const getDisplayName = (key: string) => {
     const filePart = key.split('/').pop() ?? key
@@ -77,9 +89,44 @@ function App() {
     }
   }
 
+  const loadSharedFiles = async () => {
+    if (!auth.user?.access_token) {
+      return
+    }
+
+    setLoadingShared(true)
+    setSharedError('')
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/shares`,
+        {
+          headers: {
+            Authorization: `Bearer ${auth.user.access_token}`,
+          },
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          `Shared files request failed: ${response.status}`,
+        )
+      }
+
+      const data = await response.json()
+      setSharedFiles(data.shares ?? [])
+    } catch (error) {
+      console.error(error)
+      setSharedError('Unable to load shared files.')
+    } finally {
+      setLoadingShared(false)
+    }
+  }
+
   useEffect(() => {
     if (auth.isAuthenticated && auth.user?.access_token) {
       loadFiles()
+      loadSharedFiles()
     }
   }, [auth.isAuthenticated, auth.user?.access_token])
 
@@ -180,6 +227,45 @@ function App() {
       if (!response.ok) {
         throw new Error(
           `Download request failed: ${response.status}`,
+        )
+      }
+
+      const data = await response.json()
+
+      const link = document.createElement('a')
+      link.href = data.downloadUrl
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (error) {
+      console.error(error)
+      alert('Download failed.')
+    }
+  }
+
+  const handleSharedDownload = async (shared: SharedItem) => {
+    if (!auth.user?.access_token) {
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/downloads`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.user.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: shared.objectKey,
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          `Shared download failed: ${response.status}`,
         )
       }
 
@@ -450,6 +536,54 @@ function App() {
                     {deletingKey === file.key
                       ? 'Deleting...'
                       : 'Delete'}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <br />
+
+      <hr />
+
+      <h2>Shared with me</h2>
+
+      {loadingShared && <p>Loading shared files...</p>}
+
+      {sharedError && <p>{sharedError}</p>}
+
+      {!loadingShared &&
+        !sharedError &&
+        sharedFiles.length === 0 && (
+          <p>No files shared with you.</p>
+        )}
+
+      {sharedFiles.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Shared at</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {sharedFiles.map((shared) => (
+              <tr key={shared.shareId}>
+                <td>{shared.fileName}</td>
+
+                <td>
+                  {new Date(shared.createdAt).toLocaleString()}
+                </td>
+
+                <td>
+                  <button
+                    onClick={() => handleSharedDownload(shared)}
+                  >
+                    Download
                   </button>
                 </td>
               </tr>
