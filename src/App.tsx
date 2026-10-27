@@ -327,9 +327,15 @@ function App() {
         )
       }
 
-      setShareMessage(
-        `File shared successfully with ${recipientEmail}.`,
-      )
+      if (data.alreadyShared) {
+        setShareMessage(
+          `File is already shared with ${recipientEmail}.`,
+        )
+      } else {
+        setShareMessage(
+          `File shared successfully with ${recipientEmail}.`,
+        )
+      }
     } catch (error) {
       console.error(error)
       setShareMessage('Share failed.')
