@@ -26,6 +26,14 @@ type SharedItem = {
   createdAt: string
 }
 
+type ExternalShareResponse = {
+  shareId: string
+  token: string
+  expiresAt: number
+  expiresInHours: number
+  maxDownloads: number
+}
+
 function App() {
   const auth = useAuth()
 
@@ -46,6 +54,25 @@ function App() {
   const [sharedFiles, setSharedFiles] = useState<SharedItem[]>([])
   const [loadingShared, setLoadingShared] = useState(false)
   const [sharedError, setSharedError] = useState('')
+
+  const [externalSharingKey, setExternalSharingKey] = useState('')
+  const [externalShareMessage, setExternalShareMessage] = useState('')
+  const [externalShareUrl, setExternalShareUrl] = useState('')
+
+  const [externalDownloading, setExternalDownloading] = useState(false)
+  const [externalDownloadMessage, setExternalDownloadMessage] =
+    useState('')
+
+  const queryExternalToken =
+    new URLSearchParams(window.location.search).get('external')
+
+  const hashExternalToken =
+    new URLSearchParams(
+      window.location.hash.replace(/^#/, ''),
+    ).get('external')
+
+  const externalToken =
+    hashExternalToken || queryExternalToken
 
   const getDisplayName = (key: string) => {
     const filePart = key.split('/').pop() ?? key
@@ -282,6 +309,185 @@ function App() {
     }
   }
 
+  const handleExternalDownload = async () => {
+    if (!externalToken) {
+      return
+    }
+
+    setExternalDownloading(true)
+    setExternalDownloadMessage('')
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/external-download`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token: externalToken,
+          }),
+        },
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            `External download failed: ${response.status}`,
+        )
+      }
+
+      const link = document.createElement('a')
+      link.href = data.downloadUrl
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+
+      setExternalDownloadMessage(
+        `Download started. ${data.downloadCount} of ${data.maxDownloads} allowed downloads used.`,
+      )
+    } catch (error) {
+      console.error(error)
+
+      setExternalDownloadMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to download shared file.',
+      )
+    } finally {
+      setExternalDownloading(false)
+    }
+  }
+
+  const handleExternalShare = async (file: FileItem) => {
+    if (!auth.user?.access_token) {
+      return
+    }
+
+    const emailInput = window.prompt(
+      'Recipient email (optional — the link must still be sent manually):',
+    )
+
+    if (emailInput === null) {
+      return
+    }
+
+    const recipientEmail = emailInput.trim().toLowerCase()
+
+    if (recipientEmail && !recipientEmail.includes('@')) {
+      alert('Please enter a valid email address.')
+      return
+    }
+
+    const expirationInput = window.prompt(
+      'Link expiration in hours (1–168):',
+      '24',
+    )
+
+    if (expirationInput === null) {
+      return
+    }
+
+    const maxDownloadsInput = window.prompt(
+      'Maximum downloads (1–20):',
+      '5',
+    )
+
+    if (maxDownloadsInput === null) {
+      return
+    }
+
+    const expiresInHours = Number(expirationInput)
+    const maxDownloads = Number(maxDownloadsInput)
+
+    if (
+      !Number.isInteger(expiresInHours) ||
+      expiresInHours < 1 ||
+      expiresInHours > 168
+    ) {
+      alert('Expiration must be between 1 and 168 hours.')
+      return
+    }
+
+    if (
+      !Number.isInteger(maxDownloads) ||
+      maxDownloads < 1 ||
+      maxDownloads > 20
+    ) {
+      alert('Maximum downloads must be between 1 and 20.')
+      return
+    }
+
+    setExternalSharingKey(file.key)
+    setExternalShareMessage('')
+    setExternalShareUrl('')
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/external-shares`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.user.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: file.key,
+            recipientEmail,
+            expiresInHours,
+            maxDownloads,
+          }),
+        },
+      )
+
+      const data: ExternalShareResponse & {
+        message?: string
+      } = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            `External share request failed: ${response.status}`,
+        )
+      }
+
+      const appUrl = String(
+        import.meta.env.VITE_APP_URL || window.location.origin,
+      ).replace(/\/+$/, '')
+
+      const shareUrl =
+        `${appUrl}/#external=` +
+        encodeURIComponent(data.token)
+
+      setExternalShareUrl(shareUrl)
+
+      try {
+        await navigator.clipboard.writeText(shareUrl)
+
+        setExternalShareMessage(
+          `External link created and copied. Expires in ${expiresInHours} hours; maximum ${maxDownloads} downloads.`,
+        )
+      } catch {
+        setExternalShareMessage(
+          `External link created. Expires in ${expiresInHours} hours; maximum ${maxDownloads} downloads.`,
+        )
+      }
+    } catch (error) {
+      console.error(error)
+
+      setExternalShareMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to create external share.',
+      )
+    } finally {
+      setExternalSharingKey('')
+    }
+  }
+
   const handleShare = async (file: FileItem) => {
     if (!auth.user?.access_token) {
       return
@@ -407,6 +613,39 @@ function App() {
       `&logout_uri=${encodeURIComponent(logoutUri)}`
   }
 
+  if (externalToken) {
+    return (
+      <main>
+        <h1>Secure File Portal</h1>
+
+        <h2>External file download</h2>
+
+        <p>
+          A LISCO employee has shared a temporary secure
+          file link with you.
+        </p>
+
+        <p>
+          Access may be limited by expiration time and
+          maximum download count.
+        </p>
+
+        <button
+          onClick={handleExternalDownload}
+          disabled={externalDownloading}
+        >
+          {externalDownloading
+            ? 'Preparing download...'
+            : 'Download file'}
+        </button>
+
+        {externalDownloadMessage && (
+          <p>{externalDownloadMessage}</p>
+        )}
+      </main>
+    )
+  }
+
   if (auth.isLoading) {
     return (
       <main>
@@ -479,6 +718,24 @@ function App() {
       <h2>Files</h2>
 
       {shareMessage && <p>{shareMessage}</p>}
+
+      {externalShareMessage && (
+        <p>{externalShareMessage}</p>
+      )}
+
+      {externalShareUrl && (
+        <p>
+          External link:{' '}
+          <a
+            href={externalShareUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open secure link
+          </a>
+        </p>
+      )}
+
       {deleteMessage && <p>{deleteMessage}</p>}
 
       {loadingFiles && <p>Loading files...</p>}
@@ -531,6 +788,17 @@ function App() {
                     {sharingKey === file.key
                       ? 'Sharing...'
                       : 'Share'}
+                  </button>
+
+                  {' '}
+
+                  <button
+                    onClick={() => handleExternalShare(file)}
+                    disabled={externalSharingKey === file.key}
+                  >
+                    {externalSharingKey === file.key
+                      ? 'Creating link...'
+                      : 'Share externally'}
                   </button>
 
                   {' '}
