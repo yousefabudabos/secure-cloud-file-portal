@@ -64,12 +64,30 @@ function App() {
   const [sharingKey, setSharingKey] = useState('')
   const [shareMessage, setShareMessage] = useState('')
 
+  const [internalShareFile, setInternalShareFile] =
+    useState<FileItem | null>(null)
+  const [internalRecipientEmail, setInternalRecipientEmail] =
+    useState('')
+  const [internalShareError, setInternalShareError] =
+    useState('')
+
   const [sharedFiles, setSharedFiles] = useState<SharedItem[]>([])
   const [loadingShared, setLoadingShared] = useState(false)
   const [sharedError, setSharedError] = useState('')
 
   const [externalSharingKey, setExternalSharingKey] = useState('')
   const [externalShareMessage, setExternalShareMessage] = useState('')
+
+  const [externalShareFile, setExternalShareFile] =
+    useState<FileItem | null>(null)
+  const [externalRecipientEmail, setExternalRecipientEmail] =
+    useState('')
+  const [externalExpiresInHours, setExternalExpiresInHours] =
+    useState('24')
+  const [externalMaxDownloads, setExternalMaxDownloads] =
+    useState('5')
+  const [externalShareError, setExternalShareError] =
+    useState('')
   const [externalShareUrl, setExternalShareUrl] = useState('')
   const [externalShareId, setExternalShareId] = useState('')
   const [revokingExternalId, setRevokingExternalId] = useState('')
@@ -498,66 +516,50 @@ function App() {
     }
   }
 
-  const handleExternalShare = async (file: FileItem) => {
-    if (!auth.user?.access_token) {
+  const openExternalShareModal = (file: FileItem) => {
+    setExternalShareFile(file)
+    setExternalRecipientEmail('')
+    setExternalExpiresInHours('24')
+    setExternalMaxDownloads('5')
+    setExternalShareError('')
+  }
+
+  const closeExternalShareModal = () => {
+    if (externalSharingKey) {
       return
     }
 
-    const emailInput = window.prompt(
-      'Recipient email (optional — the link must still be sent manually):',
-    )
+    setExternalShareFile(null)
+    setExternalShareError('')
+  }
 
-    if (emailInput === null) {
+  const handleExternalShare = async () => {
+    const file = externalShareFile
+
+    if (!file || !auth.user?.access_token) {
       return
     }
 
-    const recipientEmail = emailInput.trim().toLowerCase()
-
-    if (recipientEmail && !recipientEmail.includes('@')) {
-      alert('Please enter a valid email address.')
-      return
-    }
-
-    const expirationInput = window.prompt(
-      'Link expiration in hours (1–168):',
-      '24',
-    )
-
-    if (expirationInput === null) {
-      return
-    }
-
-    const maxDownloadsInput = window.prompt(
-      'Maximum downloads (1–20):',
-      '5',
-    )
-
-    if (maxDownloadsInput === null) {
-      return
-    }
-
-    const expiresInHours = Number(expirationInput)
-    const maxDownloads = Number(maxDownloadsInput)
+    const recipientEmail =
+      externalRecipientEmail.trim().toLowerCase()
 
     if (
-      !Number.isInteger(expiresInHours) ||
-      expiresInHours < 1 ||
-      expiresInHours > 168
+      recipientEmail &&
+      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(
+        recipientEmail,
+      )
     ) {
-      alert('Expiration must be between 1 and 168 hours.')
+      setExternalShareError(
+        'يرجى إدخال بريد إلكتروني صحيح.',
+      )
       return
     }
 
-    if (
-      !Number.isInteger(maxDownloads) ||
-      maxDownloads < 1 ||
-      maxDownloads > 20
-    ) {
-      alert('Maximum downloads must be between 1 and 20.')
-      return
-    }
+    const expiresInHours = Number(externalExpiresInHours)
+    const maxDownloads = Number(externalMaxDownloads)
 
     setExternalSharingKey(file.key)
+    setExternalShareError('')
     setExternalShareMessage('')
     setExternalShareUrl('')
     setExternalShareId('')
@@ -592,7 +594,8 @@ function App() {
       }
 
       const appUrl = String(
-        import.meta.env.VITE_APP_URL || window.location.origin,
+        import.meta.env.VITE_APP_URL ||
+          window.location.origin,
       ).replace(/\/+$/, '')
 
       const shareUrl =
@@ -608,20 +611,23 @@ function App() {
         await navigator.clipboard.writeText(shareUrl)
 
         setExternalShareMessage(
-          `External link created and copied. Expires in ${expiresInHours} hours; maximum ${maxDownloads} downloads.`,
+          'تم إنشاء رابط المشاركة الخارجية ونسخه بنجاح.',
         )
       } catch {
         setExternalShareMessage(
-          `External link created. Expires in ${expiresInHours} hours; maximum ${maxDownloads} downloads.`,
+          'تم إنشاء رابط المشاركة الخارجية بنجاح.',
         )
       }
+
+      setExternalShareFile(null)
+      setExternalRecipientEmail('')
     } catch (error) {
       console.error(error)
 
-      setExternalShareMessage(
+      setExternalShareError(
         error instanceof Error
           ? error.message
-          : 'Unable to create external share.',
+          : 'تعذر إنشاء رابط المشاركة الخارجية.',
       )
     } finally {
       setExternalSharingKey('')
@@ -692,26 +698,52 @@ function App() {
     }
   }
 
-  const handleShare = async (file: FileItem) => {
-    if (!auth.user?.access_token) {
+  const openInternalShareModal = (file: FileItem) => {
+    setInternalShareFile(file)
+    setInternalRecipientEmail('')
+    setInternalShareError('')
+  }
+
+  const closeInternalShareModal = () => {
+    if (sharingKey) {
       return
     }
 
-    const recipientEmail = window.prompt(
-      `Share "${getDisplayName(file.key)}" with employee email:`,
-    )?.trim().toLowerCase()
+    setInternalShareFile(null)
+    setInternalShareError('')
+  }
+
+  const handleShare = async () => {
+    const file = internalShareFile
+
+    if (!file || !auth.user?.access_token) {
+      return
+    }
+
+    const recipientEmail =
+      internalRecipientEmail.trim().toLowerCase()
 
     if (!recipientEmail) {
+      setInternalShareError(
+        'أدخل البريد الإلكتروني للموظف المستلم.',
+      )
       return
     }
 
-    if (!recipientEmail.includes('@')) {
-      alert('Please enter a valid email address.')
+    if (
+      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(
+        recipientEmail,
+      )
+    ) {
+      setInternalShareError(
+        'يرجى إدخال بريد إلكتروني صحيح.',
+      )
       return
     }
 
     setSharingKey(file.key)
     setShareMessage('')
+    setInternalShareError('')
 
     try {
       const response = await fetch(
@@ -733,22 +765,31 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || `Share request failed: ${response.status}`,
+          data.message ||
+            `Share request failed: ${response.status}`,
         )
       }
 
       if (data.alreadyShared) {
         setShareMessage(
-          `File is already shared with ${recipientEmail}.`,
+          `الملف مشارك مسبقًا مع ${recipientEmail}.`,
         )
       } else {
         setShareMessage(
-          `File shared successfully with ${recipientEmail}.`,
+          `تمت مشاركة الملف بنجاح مع ${recipientEmail}.`,
         )
       }
+
+      setInternalShareFile(null)
+      setInternalRecipientEmail('')
     } catch (error) {
       console.error(error)
-      setShareMessage('Share failed.')
+
+      setInternalShareError(
+        error instanceof Error
+          ? error.message
+          : 'تعذرت مشاركة الملف.',
+      )
     } finally {
       setSharingKey('')
     }
@@ -1283,7 +1324,7 @@ function App() {
                           <button
                             className="btn btn-small btn-secondary"
                             onClick={() =>
-                              handleShare(file)
+                              openInternalShareModal(file)
                             }
                             disabled={
                               sharingKey === file.key
@@ -1297,7 +1338,7 @@ function App() {
                           <button
                             className="btn btn-small btn-secondary"
                             onClick={() =>
-                              handleExternalShare(file)
+                              openExternalShareModal(file)
                             }
                             disabled={
                               externalSharingKey === file.key
@@ -1570,6 +1611,306 @@ function App() {
             </div>
           )}
         </section>
+
+        {internalShareFile && (
+          <div
+            className="modal-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                closeInternalShareModal()
+              }
+            }}
+          >
+            <div
+              className="modal-card"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="internal-share-title"
+            >
+              <div className="modal-header">
+                <div>
+                  <span className="eyebrow">
+                    مشاركة داخل الشركة
+                  </span>
+                  <h2 id="internal-share-title">
+                    مشاركة ملف مع موظف
+                  </h2>
+                </div>
+
+                <button
+                  className="modal-close"
+                  onClick={closeInternalShareModal}
+                  disabled={Boolean(sharingKey)}
+                  aria-label="إغلاق"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="modal-file-card">
+                <div className="file-icon">DOC</div>
+
+                <div>
+                  <strong
+                    className="bidi-safe"
+                    dir="auto"
+                  >
+                    {getDisplayName(
+                      internalShareFile.key,
+                    )}
+                  </strong>
+                  <span>
+                    سيتمكن الموظف من الوصول إلى الملف من
+                    قسم «تمت مشاركتها معي».
+                  </span>
+                </div>
+              </div>
+
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  handleShare()
+                }}
+              >
+                <div className="form-group">
+                  <label htmlFor="internal-recipient-email">
+                    البريد الإلكتروني للموظف
+                  </label>
+
+                  <input
+                    id="internal-recipient-email"
+                    className="form-input"
+                    type="email"
+                    dir="ltr"
+                    autoFocus
+                    autoComplete="email"
+                    placeholder="employee@example.com"
+                    value={internalRecipientEmail}
+                    onChange={(event) => {
+                      setInternalRecipientEmail(
+                        event.target.value,
+                      )
+                      setInternalShareError('')
+                    }}
+                  />
+
+                  <small>
+                    يجب أن يكون المستلم مستخدمًا مسجلًا في
+                    بوابة الشركة.
+                  </small>
+                </div>
+
+                {internalShareError && (
+                  <div className="notice error">
+                    {internalShareError}
+                  </div>
+                )}
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={closeInternalShareModal}
+                    disabled={Boolean(sharingKey)}
+                  >
+                    إلغاء
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={Boolean(sharingKey)}
+                  >
+                    {sharingKey
+                      ? 'جارٍ المشاركة...'
+                      : 'مشاركة الملف'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {externalShareFile && (
+          <div
+            className="modal-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                closeExternalShareModal()
+              }
+            }}
+          >
+            <div
+              className="modal-card modal-card-wide"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="external-share-title"
+            >
+              <div className="modal-header">
+                <div>
+                  <span className="eyebrow">
+                    مشاركة خارج الشركة
+                  </span>
+                  <h2 id="external-share-title">
+                    إنشاء رابط مشاركة آمن
+                  </h2>
+                </div>
+
+                <button
+                  className="modal-close"
+                  onClick={closeExternalShareModal}
+                  disabled={Boolean(externalSharingKey)}
+                  aria-label="إغلاق"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="modal-file-card">
+                <div className="file-icon">EXT</div>
+
+                <div>
+                  <strong
+                    className="bidi-safe"
+                    dir="auto"
+                  >
+                    {getDisplayName(
+                      externalShareFile.key,
+                    )}
+                  </strong>
+                  <span>
+                    سيتم إنشاء رابط مؤقت يمكن إلغاؤه في أي
+                    وقت.
+                  </span>
+                </div>
+              </div>
+
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  handleExternalShare()
+                }}
+              >
+                <div className="form-group">
+                  <label htmlFor="external-recipient-email">
+                    بريد المستلم
+                    <span className="optional-label">
+                      اختياري
+                    </span>
+                  </label>
+
+                  <input
+                    id="external-recipient-email"
+                    className="form-input"
+                    type="email"
+                    dir="ltr"
+                    autoFocus
+                    autoComplete="email"
+                    placeholder="name@external-company.com"
+                    value={externalRecipientEmail}
+                    onChange={(event) => {
+                      setExternalRecipientEmail(
+                        event.target.value,
+                      )
+                      setExternalShareError('')
+                    }}
+                  />
+
+                  <small>
+                    هذا البريد للتوثيق فقط حاليًا. أرسل
+                    الرابط للمستلم بالطريقة المناسبة.
+                  </small>
+                </div>
+
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="external-expiration">
+                      مدة صلاحية الرابط
+                    </label>
+
+                    <select
+                      id="external-expiration"
+                      className="form-input"
+                      value={externalExpiresInHours}
+                      onChange={(event) =>
+                        setExternalExpiresInHours(
+                          event.target.value,
+                        )
+                      }
+                    >
+                      <option value="1">ساعة واحدة</option>
+                      <option value="6">6 ساعات</option>
+                      <option value="24">24 ساعة</option>
+                      <option value="72">3 أيام</option>
+                      <option value="168">7 أيام</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="external-download-limit">
+                      الحد الأقصى للتنزيلات
+                    </label>
+
+                    <select
+                      id="external-download-limit"
+                      className="form-input"
+                      value={externalMaxDownloads}
+                      onChange={(event) =>
+                        setExternalMaxDownloads(
+                          event.target.value,
+                        )
+                      }
+                    >
+                      <option value="1">مرة واحدة</option>
+                      <option value="3">3 مرات</option>
+                      <option value="5">5 مرات</option>
+                      <option value="10">10 مرات</option>
+                      <option value="20">20 مرة</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="modal-security-box">
+                  <strong>رابط آمن ومؤقت</strong>
+                  <span>
+                    لا يحتاج المستلم إلى حساب LISCO، ويمكنك
+                    إلغاء الرابط لاحقًا من قسم المشاركات
+                    الخارجية.
+                  </span>
+                </div>
+
+                {externalShareError && (
+                  <div className="notice error">
+                    {externalShareError}
+                  </div>
+                )}
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={closeExternalShareModal}
+                    disabled={Boolean(externalSharingKey)}
+                  >
+                    إلغاء
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={Boolean(externalSharingKey)}
+                  >
+                    {externalSharingKey
+                      ? 'جارٍ إنشاء الرابط...'
+                      : 'إنشاء الرابط الآمن'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <footer className="portal-footer">
           <span>
