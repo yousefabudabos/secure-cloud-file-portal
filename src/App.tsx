@@ -58,6 +58,8 @@ function App() {
   const [externalSharingKey, setExternalSharingKey] = useState('')
   const [externalShareMessage, setExternalShareMessage] = useState('')
   const [externalShareUrl, setExternalShareUrl] = useState('')
+  const [externalShareId, setExternalShareId] = useState('')
+  const [revokingExternal, setRevokingExternal] = useState(false)
 
   const [externalDownloading, setExternalDownloading] = useState(false)
   const [externalDownloadMessage, setExternalDownloadMessage] =
@@ -424,6 +426,7 @@ function App() {
     setExternalSharingKey(file.key)
     setExternalShareMessage('')
     setExternalShareUrl('')
+    setExternalShareId('')
 
     try {
       const response = await fetch(
@@ -463,6 +466,7 @@ function App() {
         encodeURIComponent(data.token)
 
       setExternalShareUrl(shareUrl)
+      setExternalShareId(data.shareId)
 
       try {
         await navigator.clipboard.writeText(shareUrl)
@@ -485,6 +489,63 @@ function App() {
       )
     } finally {
       setExternalSharingKey('')
+    }
+  }
+
+  const handleRevokeExternalShare = async () => {
+    if (!auth.user?.access_token || !externalShareId) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Revoke this external sharing link?\n\nThe recipient will no longer be able to use it.',
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setRevokingExternal(true)
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/external-shares`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${auth.user.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            shareId: externalShareId,
+          }),
+        },
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            `Revoke request failed: ${response.status}`,
+        )
+      }
+
+      setExternalShareMessage(
+        'External sharing link revoked successfully.',
+      )
+      setExternalShareUrl('')
+      setExternalShareId('')
+    } catch (error) {
+      console.error(error)
+
+      setExternalShareMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to revoke external sharing link.',
+      )
+    } finally {
+      setRevokingExternal(false)
     }
   }
 
@@ -724,16 +785,31 @@ function App() {
       )}
 
       {externalShareUrl && (
-        <p>
-          External link:{' '}
-          <a
-            href={externalShareUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open secure link
-          </a>
-        </p>
+        <>
+          <p>
+            External link:{' '}
+            <a
+              href={externalShareUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open secure link
+            </a>
+          </p>
+
+          {externalShareId && (
+            <p>
+              <button
+                onClick={handleRevokeExternalShare}
+                disabled={revokingExternal}
+              >
+                {revokingExternal
+                  ? 'Revoking...'
+                  : 'Revoke external link'}
+              </button>
+            </p>
+          )}
+        </>
       )}
 
       {deleteMessage && <p>{deleteMessage}</p>}
