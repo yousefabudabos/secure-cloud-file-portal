@@ -168,6 +168,31 @@ function App() {
   const externalToken =
     hashExternalToken || queryExternalToken
 
+  const isValidEmail = (value: string) => {
+    const email = value.trim()
+
+    if (!email || email.length > 254 || email.includes(' ')) {
+      return false
+    }
+
+    const atIndex = email.lastIndexOf('@')
+
+    if (
+      atIndex <= 0 ||
+      atIndex === email.length - 1
+    ) {
+      return false
+    }
+
+    const domain = email.slice(atIndex + 1)
+
+    return (
+      domain.includes('.') &&
+      !domain.startsWith('.') &&
+      !domain.endsWith('.')
+    )
+  }
+
   const getDisplayName = (key: string) => {
     const filePart = key.split('/').pop() ?? key
 
@@ -545,9 +570,7 @@ function App() {
 
     if (
       recipientEmail &&
-      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(
-        recipientEmail,
-      )
+      !isValidEmail(recipientEmail)
     ) {
       setExternalShareError(
         'يرجى إدخال بريد إلكتروني صحيح.',
@@ -730,11 +753,7 @@ function App() {
       return
     }
 
-    if (
-      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(
-        recipientEmail,
-      )
-    ) {
+    if (!isValidEmail(recipientEmail)) {
       setInternalShareError(
         'يرجى إدخال بريد إلكتروني صحيح.',
       )
