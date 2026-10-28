@@ -740,130 +740,323 @@ function App() {
 
   if (externalToken) {
     return (
-      <main>
-        <h1>Secure File Portal</h1>
+      <div className="public-page" dir="rtl">
+        <div className="public-card">
+          <div className="public-brand">
+            <div className="brand-mark">LISCO</div>
+            <div>
+              <strong>الشركة الليبية للحديد والصلب</strong>
+              <span>بوابة مشاركة الملفات الآمنة</span>
+            </div>
+          </div>
 
-        <h2>External file download</h2>
+          <div className="public-icon">↓</div>
 
-        <p>
-          A LISCO employee has shared a temporary secure
-          file link with you.
-        </p>
+          <h1>تنزيل ملف آمن</h1>
 
-        <p>
-          Access may be limited by expiration time and
-          maximum download count.
-        </p>
+          <p className="public-description">
+            تمت مشاركة ملف معك من خلال بوابة الشركة الليبية
+            للحديد والصلب.
+          </p>
 
-        <button
-          onClick={handleExternalDownload}
-          disabled={externalDownloading}
-        >
-          {externalDownloading
-            ? 'Preparing download...'
-            : 'Download file'}
-        </button>
+          <p className="public-hint">
+            قد يكون الرابط محدودًا بمدة صلاحية أو بعدد معين
+            من مرات التنزيل.
+          </p>
 
-        {externalDownloadMessage && (
-          <p>{externalDownloadMessage}</p>
-        )}
-      </main>
+          <button
+            className="btn btn-primary btn-large"
+            onClick={handleExternalDownload}
+            disabled={externalDownloading}
+          >
+            {externalDownloading
+              ? 'جارٍ تجهيز الملف...'
+              : 'تنزيل الملف'}
+          </button>
+
+          {externalDownloadMessage && (
+            <div className="notice">
+              {externalDownloadMessage}
+            </div>
+          )}
+
+          <div className="security-note">
+            اتصال آمن • الملفات محمية ومشفرة
+          </div>
+        </div>
+      </div>
     )
   }
 
   if (auth.isLoading) {
     return (
-      <main>
-        <h2>Loading...</h2>
-      </main>
+      <div className="center-page">
+        <div className="loader" />
+        <p>جارٍ تحميل البوابة...</p>
+      </div>
     )
   }
 
   if (auth.error) {
     return (
-      <main>
-        <h2>Authentication error</h2>
-        <p>{auth.error.message}</p>
-      </main>
+      <div className="center-page">
+        <div className="auth-card">
+          <h2>تعذر تسجيل الدخول</h2>
+          <p>{auth.error.message}</p>
+        </div>
+      </div>
     )
   }
 
   if (!auth.isAuthenticated) {
     return (
-      <main>
-        <h1>Secure File Portal</h1>
-        <p>Secure file sharing for authorized users.</p>
+      <div className="login-page" dir="rtl">
+        <div className="login-card">
+          <div className="login-brand">
+            <div className="brand-mark brand-mark-large">
+              LISCO
+            </div>
 
-        <button onClick={() => auth.signinRedirect()}>
-          Sign in with LISCO
-        </button>
-      </main>
+            <h1>بوابة مشاركة الملفات الآمنة</h1>
+
+            <p>
+              مشاركة الملفات بطريقة آمنة وسهلة لموظفي
+              الشركة الليبية للحديد والصلب.
+            </p>
+          </div>
+
+          <button
+            className="btn btn-primary btn-large login-button"
+            onClick={() => auth.signinRedirect()}
+          >
+            تسجيل الدخول بحساب الشركة
+          </button>
+
+          <div className="login-security">
+            🔒 دخول آمن ومصادقة متعددة العوامل
+          </div>
+        </div>
+      </div>
     )
   }
 
   return (
-    <main>
-      <h1>Secure File Portal</h1>
+    <div className="portal" dir="rtl">
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div className="company-brand">
+            <div className="brand-mark">LISCO</div>
 
-      <p>
-        Signed in as:
-        <strong> {auth.user?.profile.email}</strong>
-      </p>
+            <div className="company-text">
+              <strong>الشركة الليبية للحديد والصلب</strong>
+              <span>LIBYAN IRON AND STEEL COMPANY</span>
+            </div>
 
-      <h2>Upload file</h2>
+            <div className="brand-divider" />
 
-      <input
-        type="file"
-        onChange={(event) =>
-          setSelectedFile(event.target.files?.[0] ?? null)
-        }
-      />
+            <div className="portal-title">
+              <strong>بوابة مشاركة الملفات الآمنة</strong>
+              <span>Secure File Sharing Portal</span>
+            </div>
+          </div>
 
-      <br />
-      <br />
+          <div className="user-area">
+            <div className="user-avatar">
+              {(auth.user?.profile.email || 'U')
+                .toString()
+                .charAt(0)
+                .toUpperCase()}
+            </div>
 
-      <button
-        onClick={handleUpload}
-        disabled={!selectedFile || uploading}
-      >
-        {uploading ? 'Uploading...' : 'Upload'}
-      </button>
+            <div className="user-info">
+              <strong>المستخدم</strong>
+              <span>{auth.user?.profile.email}</span>
+            </div>
 
-      {selectedFile && (
-        <p>
-          Selected: {selectedFile.name} —{' '}
-          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-        </p>
-      )}
-
-      {uploadMessage && <p>{uploadMessage}</p>}
-
-      <hr />
-
-      <h2>Files</h2>
-
-      {shareMessage && <p>{shareMessage}</p>}
-
-      {externalShareMessage && (
-        <p>{externalShareMessage}</p>
-      )}
-
-      {externalShareUrl && (
-        <>
-          <p>
-            External link:{' '}
-            <a
-              href={externalShareUrl}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              className="btn btn-header"
+              onClick={handleSignOut}
             >
-              Open secure link
-            </a>
-          </p>
+              تسجيل الخروج
+            </button>
+          </div>
+        </div>
+      </header>
 
-          {externalShareId && (
+      <nav className="portal-nav">
+        <div className="nav-inner">
+          <a href="#my-files" className="nav-link active">
+            ملفاتي
+          </a>
+
+          <a href="#shared-with-me" className="nav-link">
+            تمت مشاركتها معي
+          </a>
+
+          <a href="#external-shares" className="nav-link">
+            المشاركات الخارجية
+          </a>
+        </div>
+      </nav>
+
+      <main className="dashboard">
+        <section className="upload-card">
+          <div className="upload-copy">
+            <span className="eyebrow">رفع الملفات</span>
+
+            <h1>شارك ملفاتك بأمان</h1>
+
             <p>
+              ارفع المستندات والصور والملفات ثم شاركها مع
+              موظفي الشركة أو مع جهة خارجية.
+            </p>
+
+            <div className="security-points">
+              <span>✓ تشفير آمن</span>
+              <span>✓ وصول حسب الصلاحيات</span>
+              <span>✓ حد أقصى 100 MB</span>
+            </div>
+          </div>
+
+          <label
+            className="upload-dropzone"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault()
+              setSelectedFile(
+                event.dataTransfer.files?.[0] ?? null,
+              )
+            }}
+          >
+            <input
+              className="file-input"
+              type="file"
+              onChange={(event) =>
+                setSelectedFile(
+                  event.target.files?.[0] ?? null,
+                )
+              }
+            />
+
+            <div className="upload-symbol">↑</div>
+
+            <strong>
+              اسحب الملف هنا أو اضغط للاختيار
+            </strong>
+
+            <span>
+              المستندات والصور والملفات حتى 100 MB
+            </span>
+
+            <div className="btn btn-primary">
+              اختيار ملف
+            </div>
+          </label>
+
+          {selectedFile && (
+            <div className="selected-file">
+              <div>
+                <strong>{selectedFile.name}</strong>
+                <span>
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)}
+                  {' '}MB
+                </span>
+              </div>
+
               <button
+                className="btn btn-primary"
+                onClick={handleUpload}
+                disabled={uploading}
+              >
+                {uploading
+                  ? 'جارٍ الرفع...'
+                  : 'رفع الملف'}
+              </button>
+            </div>
+          )}
+
+          {uploadMessage && (
+            <div
+              className={
+                uploadMessage.includes('successfully')
+                  ? 'notice success'
+                  : 'notice error'
+              }
+            >
+              {uploadMessage}
+            </div>
+          )}
+        </section>
+
+        {(shareMessage ||
+          deleteMessage ||
+          externalShareMessage) && (
+          <div className="messages-area">
+            {shareMessage && (
+              <div className="notice success">
+                {shareMessage}
+              </div>
+            )}
+
+            {deleteMessage && (
+              <div className="notice">
+                {deleteMessage}
+              </div>
+            )}
+
+            {externalShareMessage && (
+              <div className="notice success">
+                {externalShareMessage}
+              </div>
+            )}
+          </div>
+        )}
+
+        {externalShareUrl && (
+          <section className="link-result-card">
+            <div>
+              <span className="eyebrow">
+                رابط المشاركة الخارجية
+              </span>
+
+              <h3>تم إنشاء الرابط بنجاح</h3>
+
+              <p>
+                يمكنك نسخ الرابط وإرساله للجهة المستلمة.
+              </p>
+            </div>
+
+            <div className="link-copy-row">
+              <input
+                value={externalShareUrl}
+                readOnly
+                aria-label="External sharing link"
+              />
+
+              <button
+                className="btn btn-primary"
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    externalShareUrl,
+                  )
+                }
+              >
+                نسخ الرابط
+              </button>
+
+              <a
+                className="btn btn-secondary"
+                href={externalShareUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                فتح الرابط
+              </a>
+            </div>
+
+            {externalShareId && (
+              <button
+                className="btn btn-danger-outline"
                 onClick={() =>
                   handleRevokeExternalShare(externalShareId)
                 }
@@ -872,234 +1065,394 @@ function App() {
                 }
               >
                 {revokingExternalId === externalShareId
-                  ? 'Revoking...'
-                  : 'Revoke external link'}
+                  ? 'جارٍ الإلغاء...'
+                  : 'إلغاء مشاركة الرابط'}
               </button>
-            </p>
+            )}
+          </section>
+        )}
+
+        <section
+          id="my-files"
+          className="content-card"
+        >
+          <div className="section-header">
+            <div>
+              <span className="section-icon">▣</span>
+
+              <div>
+                <h2>ملفاتي</h2>
+                <p>
+                  الملفات التي قمت برفعها إلى البوابة
+                </p>
+              </div>
+            </div>
+
+            <span className="count-badge">
+              {files.length} ملف
+            </span>
+          </div>
+
+          {loadingFiles && (
+            <div className="empty-state">
+              جارٍ تحميل الملفات...
+            </div>
           )}
-        </>
-      )}
 
-      {deleteMessage && <p>{deleteMessage}</p>}
+          {filesError && (
+            <div className="notice error">
+              {filesError}
+            </div>
+          )}
 
-      {loadingFiles && <p>Loading files...</p>}
+          {!loadingFiles &&
+            !filesError &&
+            files.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">▢</div>
+                <strong>لا توجد ملفات حتى الآن</strong>
+                <span>
+                  ارفع أول ملف باستخدام منطقة الرفع أعلاه.
+                </span>
+              </div>
+            )}
 
-      {filesError && <p>{filesError}</p>}
+          {files.length > 0 && (
+            <div className="table-wrap">
+              <table className="portal-table">
+                <thead>
+                  <tr>
+                    <th>الملف</th>
+                    <th>الحجم</th>
+                    <th>آخر تعديل</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
 
-      {!loadingFiles &&
-        !filesError &&
-        files.length === 0 && (
-          <p>No files available.</p>
-        )}
+                <tbody>
+                  {files.map((file) => (
+                    <tr key={file.key}>
+                      <td>
+                        <div className="file-cell">
+                          <div className="file-icon">
+                            DOC
+                          </div>
 
-      {files.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>File</th>
-              <th>Size</th>
-              <th>Last modified</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+                          <strong>
+                            {getDisplayName(file.key)}
+                          </strong>
+                        </div>
+                      </td>
 
-          <tbody>
-            {files.map((file) => (
-              <tr key={file.key}>
-                <td>{getDisplayName(file.key)}</td>
+                      <td>
+                        {(file.size / 1024 / 1024).toFixed(2)}
+                        {' '}MB
+                      </td>
 
-                <td>
-                  {(file.size / 1024 / 1024).toFixed(2)} MB
-                </td>
+                      <td>
+                        {new Date(
+                          file.lastModified,
+                        ).toLocaleString('ar-LY')}
+                      </td>
 
-                <td>
-                  {new Date(
-                    file.lastModified,
-                  ).toLocaleString()}
-                </td>
+                      <td>
+                        <div className="action-group">
+                          <button
+                            className="btn btn-small btn-primary"
+                            onClick={() =>
+                              handleDownload(file)
+                            }
+                          >
+                            تنزيل
+                          </button>
 
-                <td>
-                  <button onClick={() => handleDownload(file)}>
-                    Download
-                  </button>
+                          <button
+                            className="btn btn-small btn-secondary"
+                            onClick={() =>
+                              handleShare(file)
+                            }
+                            disabled={
+                              sharingKey === file.key
+                            }
+                          >
+                            {sharingKey === file.key
+                              ? 'جارٍ المشاركة...'
+                              : 'مشاركة داخليًا'}
+                          </button>
 
-                  {' '}
+                          <button
+                            className="btn btn-small btn-secondary"
+                            onClick={() =>
+                              handleExternalShare(file)
+                            }
+                            disabled={
+                              externalSharingKey === file.key
+                            }
+                          >
+                            {externalSharingKey === file.key
+                              ? 'جارٍ الإنشاء...'
+                              : 'مشاركة خارجية'}
+                          </button>
 
-                  <button
-                    onClick={() => handleShare(file)}
-                    disabled={sharingKey === file.key}
-                  >
-                    {sharingKey === file.key
-                      ? 'Sharing...'
-                      : 'Share'}
-                  </button>
+                          <button
+                            className="btn btn-small btn-danger"
+                            onClick={() =>
+                              handleDelete(file)
+                            }
+                            disabled={
+                              deletingKey === file.key
+                            }
+                          >
+                            {deletingKey === file.key
+                              ? 'جارٍ الحذف...'
+                              : 'حذف'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-                  {' '}
+        <section
+          id="shared-with-me"
+          className="content-card"
+        >
+          <div className="section-header">
+            <div>
+              <span className="section-icon">↔</span>
 
-                  <button
-                    onClick={() => handleExternalShare(file)}
-                    disabled={externalSharingKey === file.key}
-                  >
-                    {externalSharingKey === file.key
-                      ? 'Creating link...'
-                      : 'Share externally'}
-                  </button>
+              <div>
+                <h2>تمت مشاركتها معي</h2>
+                <p>
+                  الملفات التي شاركها معك موظفون آخرون
+                </p>
+              </div>
+            </div>
 
-                  {' '}
+            <span className="count-badge">
+              {sharedFiles.length} ملف
+            </span>
+          </div>
 
-                  <button
-                    onClick={() => handleDelete(file)}
-                    disabled={deletingKey === file.key}
-                  >
-                    {deletingKey === file.key
-                      ? 'Deleting...'
-                      : 'Delete'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          {loadingShared && (
+            <div className="empty-state">
+              جارٍ تحميل الملفات المشتركة...
+            </div>
+          )}
 
-      <br />
+          {sharedError && (
+            <div className="notice error">
+              {sharedError}
+            </div>
+          )}
 
-      <hr />
+          {!loadingShared &&
+            !sharedError &&
+            sharedFiles.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">↔</div>
+                <strong>
+                  لا توجد ملفات تمت مشاركتها معك
+                </strong>
+              </div>
+            )}
 
-      <h2>Shared with me</h2>
+          {sharedFiles.length > 0 && (
+            <div className="table-wrap">
+              <table className="portal-table">
+                <thead>
+                  <tr>
+                    <th>الملف</th>
+                    <th>تاريخ المشاركة</th>
+                    <th>الإجراء</th>
+                  </tr>
+                </thead>
 
-      {loadingShared && <p>Loading shared files...</p>}
+                <tbody>
+                  {sharedFiles.map((shared) => (
+                    <tr key={shared.shareId}>
+                      <td>
+                        <div className="file-cell">
+                          <div className="file-icon">
+                            SHR
+                          </div>
+                          <strong>{shared.fileName}</strong>
+                        </div>
+                      </td>
 
-      {sharedError && <p>{sharedError}</p>}
+                      <td>
+                        {new Date(
+                          shared.createdAt,
+                        ).toLocaleString('ar-LY')}
+                      </td>
 
-      {!loadingShared &&
-        !sharedError &&
-        sharedFiles.length === 0 && (
-          <p>No files shared with you.</p>
-        )}
+                      <td>
+                        <button
+                          className="btn btn-small btn-primary"
+                          onClick={() =>
+                            handleSharedDownload(shared)
+                          }
+                        >
+                          تنزيل
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-      {sharedFiles.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>File</th>
-              <th>Shared at</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+        <section
+          id="external-shares"
+          className="content-card"
+        >
+          <div className="section-header">
+            <div>
+              <span className="section-icon">⌁</span>
 
-          <tbody>
-            {sharedFiles.map((shared) => (
-              <tr key={shared.shareId}>
-                <td>{shared.fileName}</td>
+              <div>
+                <h2>المشاركات الخارجية</h2>
+                <p>
+                  إدارة روابط الملفات التي شاركتها خارج الشركة
+                </p>
+              </div>
+            </div>
 
-                <td>
-                  {new Date(shared.createdAt).toLocaleString()}
-                </td>
+            <span className="count-badge">
+              {externalShares.length} رابط
+            </span>
+          </div>
 
-                <td>
-                  <button
-                    onClick={() => handleSharedDownload(shared)}
-                  >
-                    Download
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          {loadingExternalShares && (
+            <div className="empty-state">
+              جارٍ تحميل المشاركات الخارجية...
+            </div>
+          )}
 
-      <br />
+          {externalSharesError && (
+            <div className="notice error">
+              {externalSharesError}
+            </div>
+          )}
 
-      <hr />
+          {!loadingExternalShares &&
+            !externalSharesError &&
+            externalShares.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">⌁</div>
+                <strong>
+                  لا توجد روابط مشاركة خارجية
+                </strong>
+              </div>
+            )}
 
-      <h2>My external shares</h2>
+          {externalShares.length > 0 && (
+            <div className="table-wrap">
+              <table className="portal-table">
+                <thead>
+                  <tr>
+                    <th>الملف</th>
+                    <th>المستلم</th>
+                    <th>الحالة</th>
+                    <th>التنزيلات</th>
+                    <th>تنتهي في</th>
+                    <th>الإجراء</th>
+                  </tr>
+                </thead>
 
-      {loadingExternalShares && (
-        <p>Loading external shares...</p>
-      )}
+                <tbody>
+                  {externalShares.map((share) => (
+                    <tr key={share.shareId}>
+                      <td>
+                        <div className="file-cell">
+                          <div className="file-icon">
+                            EXT
+                          </div>
+                          <strong>{share.fileName}</strong>
+                        </div>
+                      </td>
 
-      {externalSharesError && (
-        <p>{externalSharesError}</p>
-      )}
+                      <td>
+                        {share.recipientEmail ||
+                          'غير محدد'}
+                      </td>
 
-      {!loadingExternalShares &&
-        !externalSharesError &&
-        externalShares.length === 0 && (
-          <p>No external sharing links created.</p>
-        )}
+                      <td>
+                        <span
+                          className={
+                            `status-badge status-${share.status}`
+                          }
+                        >
+                          {share.status === 'active'
+                            ? 'نشط'
+                            : share.status === 'revoked'
+                              ? 'ملغي'
+                              : share.status === 'expired'
+                                ? 'منتهي'
+                                : 'وصل حد التنزيلات'}
+                        </span>
+                      </td>
 
-      {externalShares.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>File</th>
-              <th>Recipient</th>
-              <th>Status</th>
-              <th>Downloads</th>
-              <th>Expires</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+                      <td>
+                        {share.downloadCount}
+                        {' / '}
+                        {share.maxDownloads}
+                      </td>
 
-          <tbody>
-            {externalShares.map((share) => (
-              <tr key={share.shareId}>
-                <td>{share.fileName}</td>
+                      <td>
+                        {new Date(
+                          share.expiresAt * 1000,
+                        ).toLocaleString('ar-LY')}
+                      </td>
 
-                <td>
-                  {share.recipientEmail || 'Not specified'}
-                </td>
+                      <td>
+                        {share.status === 'active' ? (
+                          <button
+                            className="btn btn-small btn-danger-outline"
+                            onClick={() =>
+                              handleRevokeExternalShare(
+                                share.shareId,
+                              )
+                            }
+                            disabled={
+                              revokingExternalId ===
+                              share.shareId
+                            }
+                          >
+                            {revokingExternalId ===
+                            share.shareId
+                              ? 'جارٍ الإلغاء...'
+                              : 'إلغاء الرابط'}
+                          </button>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-                <td>
-                  {share.status
-                    .replace('_', ' ')
-                    .toUpperCase()}
-                </td>
+        <footer className="portal-footer">
+          <span>
+            بوابة مشاركة الملفات الآمنة
+          </span>
 
-                <td>
-                  {share.downloadCount} / {share.maxDownloads}
-                </td>
-
-                <td>
-                  {new Date(
-                    share.expiresAt * 1000,
-                  ).toLocaleString()}
-                </td>
-
-                <td>
-                  {share.status === 'active' ? (
-                    <button
-                      onClick={() =>
-                        handleRevokeExternalShare(
-                          share.shareId,
-                        )
-                      }
-                      disabled={
-                        revokingExternalId === share.shareId
-                      }
-                    >
-                      {revokingExternalId === share.shareId
-                        ? 'Revoking...'
-                        : 'Revoke'}
-                    </button>
-                  ) : (
-                    '-'
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      <br />
-
-      <button onClick={handleSignOut}>
-        Sign out
-      </button>
-    </main>
+          <span>
+            الشركة الليبية للحديد والصلب — تقنية المعلومات
+          </span>
+        </footer>
+      </main>
+    </div>
   )
 }
 
