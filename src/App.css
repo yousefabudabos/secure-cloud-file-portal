@@ -750,3 +750,69 @@ input {
     text-align: center;
   }
 }
+
+/* External recipient language selector */
+.language-switch {
+  display: flex;
+  justify-content: flex-start;
+  gap: 6px;
+  width: fit-content;
+  margin-bottom: 18px;
+  padding: 4px;
+  border: 1px solid #dbe6f2;
+  border-radius: 10px;
+  background: #f4f7fb;
+}
+
+.language-btn {
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #60728a;
+  cursor: pointer;
+  padding: 7px 13px;
+  font-weight: 700;
+  transition: 0.18s ease;
+}
+
+.language-btn:hover {
+  background: #e9f2ff;
+  color: #125fc8;
+}
+
+.language-btn.active {
+  background: #1268e8;
+  color: #fff;
+  box-shadow: 0 3px 9px rgba(18, 104, 232, 0.2);
+}
+
+/* Prevent file names, e-mails and URLs from being reversed in RTL */
+.bidi-safe {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+.ltr-value {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+.link-copy-row input {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+}
+
+/* English external page alignment */
+.public-page[dir="ltr"] .public-brand > div:last-child {
+  text-align: left;
+}
+
+.public-page[dir="rtl"] .public-brand > div:last-child {
+  text-align: right;
+}
+
+.external-message {
+  line-height: 1.6;
+}

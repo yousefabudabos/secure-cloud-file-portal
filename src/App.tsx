@@ -45,6 +45,8 @@ type ExternalShareItem = {
   status: 'active' | 'revoked' | 'expired' | 'limit_reached'
 }
 
+type ExternalLanguage = 'ar' | 'en'
+
 function App() {
   const auth = useAuth()
 
@@ -82,6 +84,60 @@ function App() {
   const [externalDownloading, setExternalDownloading] = useState(false)
   const [externalDownloadMessage, setExternalDownloadMessage] =
     useState('')
+
+
+  const [externalLanguage, setExternalLanguage] =
+    useState<ExternalLanguage>(() => {
+      const savedLanguage =
+        localStorage.getItem('lisco-external-language')
+
+      if (savedLanguage === 'ar' || savedLanguage === 'en') {
+        return savedLanguage
+      }
+
+      return navigator.language
+        .toLowerCase()
+        .startsWith('ar')
+        ? 'ar'
+        : 'en'
+    })
+
+  const changeExternalLanguage = (
+    language: ExternalLanguage,
+  ) => {
+    setExternalLanguage(language)
+    localStorage.setItem(
+      'lisco-external-language',
+      language,
+    )
+  }
+
+  const externalText =
+    externalLanguage === 'ar'
+      ? {
+          company: 'الشركة الليبية للحديد والصلب',
+          portal: 'بوابة مشاركة الملفات الآمنة',
+          title: 'تنزيل ملف آمن',
+          description:
+            'تمت مشاركة ملف معك بأمان من خلال الشركة الليبية للحديد والصلب.',
+          hint:
+            'قد يكون هذا الرابط محدودًا بمدة صلاحية أو بعدد معين من مرات التنزيل.',
+          download: 'تنزيل الملف',
+          preparing: 'جارٍ تجهيز الملف...',
+          security: 'اتصال آمن • الملفات محمية ومشفرة',
+        }
+      : {
+          company: 'Libyan Iron and Steel Company',
+          portal: 'Secure File Sharing Portal',
+          title: 'Secure file download',
+          description:
+            'A file has been securely shared with you by the Libyan Iron and Steel Company.',
+          hint:
+            'This link may be limited by an expiration time or a maximum number of downloads.',
+          download: 'Download file',
+          preparing: 'Preparing download...',
+          security: 'Secure connection • Files are protected and encrypted',
+        }
 
   const queryExternalToken =
     new URLSearchParams(window.location.search).get('external')
@@ -404,15 +460,38 @@ function App() {
       link.remove()
 
       setExternalDownloadMessage(
-        `Download started. ${data.downloadCount} of ${data.maxDownloads} allowed downloads used.`,
+        externalLanguage === 'ar'
+          ? `بدأ التنزيل. تم استخدام ${data.downloadCount} من أصل ${data.maxDownloads} مرات تنزيل مسموح بها.`
+          : `Download started. ${data.downloadCount} of ${data.maxDownloads} allowed downloads used.`,
       )
     } catch (error) {
       console.error(error)
 
-      setExternalDownloadMessage(
+      const rawMessage =
         error instanceof Error
           ? error.message
-          : 'Unable to download shared file.',
+          : 'Unable to download shared file.'
+
+      const arabicMessages: Record<string, string> = {
+        'Invalid sharing link':
+          'رابط المشاركة غير صالح.',
+        'This sharing link has been revoked':
+          'تم إلغاء رابط المشاركة.',
+        'This sharing link has expired':
+          'انتهت صلاحية رابط المشاركة.',
+        'Download limit reached':
+          'تم الوصول إلى الحد الأقصى للتنزيلات.',
+        'Sharing link is no longer available':
+          'رابط المشاركة لم يعد متاحًا.',
+        'Unable to download shared file.':
+          'تعذر تنزيل الملف المشترك.',
+      }
+
+      setExternalDownloadMessage(
+        externalLanguage === 'ar'
+          ? arabicMessages[rawMessage] ||
+              'تعذر تنزيل الملف المشترك.'
+          : rawMessage,
       )
     } finally {
       setExternalDownloading(false)
@@ -740,28 +819,55 @@ function App() {
 
   if (externalToken) {
     return (
-      <div className="public-page" dir="rtl">
+      <div
+        className="public-page"
+        dir={externalLanguage === 'ar' ? 'rtl' : 'ltr'}
+        lang={externalLanguage}
+      >
         <div className="public-card">
+          <div className="language-switch">
+            <button
+              className={
+                externalLanguage === 'ar'
+                  ? 'language-btn active'
+                  : 'language-btn'
+              }
+              onClick={() => changeExternalLanguage('ar')}
+            >
+              العربية
+            </button>
+
+            <button
+              className={
+                externalLanguage === 'en'
+                  ? 'language-btn active'
+                  : 'language-btn'
+              }
+              onClick={() => changeExternalLanguage('en')}
+            >
+              English
+            </button>
+          </div>
+
           <div className="public-brand">
             <div className="brand-mark">LISCO</div>
+
             <div>
-              <strong>الشركة الليبية للحديد والصلب</strong>
-              <span>بوابة مشاركة الملفات الآمنة</span>
+              <strong>{externalText.company}</strong>
+              <span>{externalText.portal}</span>
             </div>
           </div>
 
           <div className="public-icon">↓</div>
 
-          <h1>تنزيل ملف آمن</h1>
+          <h1>{externalText.title}</h1>
 
           <p className="public-description">
-            تمت مشاركة ملف معك من خلال بوابة الشركة الليبية
-            للحديد والصلب.
+            {externalText.description}
           </p>
 
           <p className="public-hint">
-            قد يكون الرابط محدودًا بمدة صلاحية أو بعدد معين
-            من مرات التنزيل.
+            {externalText.hint}
           </p>
 
           <button
@@ -770,18 +876,18 @@ function App() {
             disabled={externalDownloading}
           >
             {externalDownloading
-              ? 'جارٍ تجهيز الملف...'
-              : 'تنزيل الملف'}
+              ? externalText.preparing
+              : externalText.download}
           </button>
 
           {externalDownloadMessage && (
-            <div className="notice">
+            <div className="notice external-message">
               {externalDownloadMessage}
             </div>
           )}
 
           <div className="security-note">
-            اتصال آمن • الملفات محمية ومشفرة
+            🔒 {externalText.security}
           </div>
         </div>
       </div>
@@ -870,7 +976,12 @@ function App() {
 
             <div className="user-info">
               <strong>المستخدم</strong>
-              <span>{auth.user?.profile.email}</span>
+              <span
+                className="ltr-value"
+                dir="ltr"
+              >
+                {auth.user?.profile.email}
+              </span>
             </div>
 
             <button
@@ -1138,7 +1249,10 @@ function App() {
                             DOC
                           </div>
 
-                          <strong>
+                          <strong
+                            className="bidi-safe"
+                            dir="auto"
+                          >
                             {getDisplayName(file.key)}
                           </strong>
                         </div>
@@ -1280,7 +1394,12 @@ function App() {
                           <div className="file-icon">
                             SHR
                           </div>
-                          <strong>{shared.fileName}</strong>
+                          <strong
+                            className="bidi-safe"
+                            dir="auto"
+                          >
+                            {shared.fileName}
+                          </strong>
                         </div>
                       </td>
 
@@ -1374,13 +1493,23 @@ function App() {
                           <div className="file-icon">
                             EXT
                           </div>
-                          <strong>{share.fileName}</strong>
+                          <strong
+                            className="bidi-safe"
+                            dir="auto"
+                          >
+                            {share.fileName}
+                          </strong>
                         </div>
                       </td>
 
                       <td>
-                        {share.recipientEmail ||
-                          'غير محدد'}
+                        <span
+                          className="ltr-value"
+                          dir="ltr"
+                        >
+                          {share.recipientEmail ||
+                            'غير محدد'}
+                        </span>
                       </td>
 
                       <td>
