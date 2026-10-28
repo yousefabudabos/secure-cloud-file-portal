@@ -34,6 +34,17 @@ type ExternalShareResponse = {
   maxDownloads: number
 }
 
+type ExternalShareItem = {
+  shareId: string
+  fileName: string
+  recipientEmail: string
+  createdAt: string
+  expiresAt: number
+  downloadCount: number
+  maxDownloads: number
+  status: 'active' | 'revoked' | 'expired' | 'limit_reached'
+}
+
 function App() {
   const auth = useAuth()
 
@@ -59,7 +70,14 @@ function App() {
   const [externalShareMessage, setExternalShareMessage] = useState('')
   const [externalShareUrl, setExternalShareUrl] = useState('')
   const [externalShareId, setExternalShareId] = useState('')
-  const [revokingExternal, setRevokingExternal] = useState(false)
+  const [revokingExternalId, setRevokingExternalId] = useState('')
+
+  const [externalShares, setExternalShares] =
+    useState<ExternalShareItem[]>([])
+  const [loadingExternalShares, setLoadingExternalShares] =
+    useState(false)
+  const [externalSharesError, setExternalSharesError] =
+    useState('')
 
   const [externalDownloading, setExternalDownloading] = useState(false)
   const [externalDownloadMessage, setExternalDownloadMessage] =
@@ -152,10 +170,47 @@ function App() {
     }
   }
 
+  const loadExternalShares = async () => {
+    if (!auth.user?.access_token) {
+      return
+    }
+
+    setLoadingExternalShares(true)
+    setExternalSharesError('')
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/external-shares`,
+        {
+          headers: {
+            Authorization: `Bearer ${auth.user.access_token}`,
+          },
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          `External shares request failed: ${response.status}`,
+        )
+      }
+
+      const data = await response.json()
+      setExternalShares(data.shares ?? [])
+    } catch (error) {
+      console.error(error)
+      setExternalSharesError(
+        'Unable to load external shares.',
+      )
+    } finally {
+      setLoadingExternalShares(false)
+    }
+  }
+
   useEffect(() => {
     if (auth.isAuthenticated && auth.user?.access_token) {
       loadFiles()
       loadSharedFiles()
+      loadExternalShares()
     }
   }, [auth.isAuthenticated, auth.user?.access_token])
 
@@ -468,6 +523,8 @@ function App() {
       setExternalShareUrl(shareUrl)
       setExternalShareId(data.shareId)
 
+      await loadExternalShares()
+
       try {
         await navigator.clipboard.writeText(shareUrl)
 
@@ -492,8 +549,10 @@ function App() {
     }
   }
 
-  const handleRevokeExternalShare = async () => {
-    if (!auth.user?.access_token || !externalShareId) {
+  const handleRevokeExternalShare = async (
+    shareId: string,
+  ) => {
+    if (!auth.user?.access_token || !shareId) {
       return
     }
 
@@ -505,7 +564,7 @@ function App() {
       return
     }
 
-    setRevokingExternal(true)
+    setRevokingExternalId(shareId)
 
     try {
       const response = await fetch(
@@ -517,7 +576,7 @@ function App() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            shareId: externalShareId,
+            shareId,
           }),
         },
       )
@@ -534,8 +593,13 @@ function App() {
       setExternalShareMessage(
         'External sharing link revoked successfully.',
       )
-      setExternalShareUrl('')
-      setExternalShareId('')
+
+      if (shareId === externalShareId) {
+        setExternalShareUrl('')
+        setExternalShareId('')
+      }
+
+      await loadExternalShares()
     } catch (error) {
       console.error(error)
 
@@ -545,7 +609,7 @@ function App() {
           : 'Unable to revoke external sharing link.',
       )
     } finally {
-      setRevokingExternal(false)
+      setRevokingExternalId('')
     }
   }
 
@@ -800,10 +864,14 @@ function App() {
           {externalShareId && (
             <p>
               <button
-                onClick={handleRevokeExternalShare}
-                disabled={revokingExternal}
+                onClick={() =>
+                  handleRevokeExternalShare(externalShareId)
+                }
+                disabled={
+                  revokingExternalId === externalShareId
+                }
               >
-                {revokingExternal
+                {revokingExternalId === externalShareId
                   ? 'Revoking...'
                   : 'Revoke external link'}
               </button>
@@ -935,6 +1003,90 @@ function App() {
                   >
                     Download
                   </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <br />
+
+      <hr />
+
+      <h2>My external shares</h2>
+
+      {loadingExternalShares && (
+        <p>Loading external shares...</p>
+      )}
+
+      {externalSharesError && (
+        <p>{externalSharesError}</p>
+      )}
+
+      {!loadingExternalShares &&
+        !externalSharesError &&
+        externalShares.length === 0 && (
+          <p>No external sharing links created.</p>
+        )}
+
+      {externalShares.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Recipient</th>
+              <th>Status</th>
+              <th>Downloads</th>
+              <th>Expires</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {externalShares.map((share) => (
+              <tr key={share.shareId}>
+                <td>{share.fileName}</td>
+
+                <td>
+                  {share.recipientEmail || 'Not specified'}
+                </td>
+
+                <td>
+                  {share.status
+                    .replace('_', ' ')
+                    .toUpperCase()}
+                </td>
+
+                <td>
+                  {share.downloadCount} / {share.maxDownloads}
+                </td>
+
+                <td>
+                  {new Date(
+                    share.expiresAt * 1000,
+                  ).toLocaleString()}
+                </td>
+
+                <td>
+                  {share.status === 'active' ? (
+                    <button
+                      onClick={() =>
+                        handleRevokeExternalShare(
+                          share.shareId,
+                        )
+                      }
+                      disabled={
+                        revokingExternalId === share.shareId
+                      }
+                    >
+                      {revokingExternalId === share.shareId
+                        ? 'Revoking...'
+                        : 'Revoke'}
+                    </button>
+                  ) : (
+                    '-'
+                  )}
                 </td>
               </tr>
             ))}
