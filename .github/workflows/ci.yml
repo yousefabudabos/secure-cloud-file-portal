@@ -23,7 +23,7 @@ jobs:
       VITE_COGNITO_CLIENT_ID: test-client
       VITE_COGNITO_DOMAIN: https://test.auth.eu-central-1.amazoncognito.com
       VITE_APP_URL: http://127.0.0.1:5173/
-      VITE_API_URL: https://api.example.test
+      VITE_API_URL: https://fixture.execute-api.eu-central-1.amazonaws.com
       PORTAL_TEST_URL: http://127.0.0.1:5173
 
     steps:
