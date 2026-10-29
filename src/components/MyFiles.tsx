@@ -1,7 +1,6 @@
 import type { FileItem } from '../types'
 import { getDisplayName } from '../utils/files'
 import ConfirmModal from './ConfirmModal'
-import Toast from './Toast'
 
 type MyFilesProps = {
   files: FileItem[]
@@ -40,7 +39,7 @@ export default function MyFiles({
           <span className="section-icon">▣</span>
 
           <div>
-            <h2>ملفاتي</h2>
+            <h2 tabIndex={-1}>ملفاتي</h2>
             <p>
               الملفات التي قمت برفعها إلى البوابة
             </p>
@@ -59,7 +58,7 @@ export default function MyFiles({
       )}
 
       {filesError && (
-        <Toast message={filesError} variant="error" />
+        <div className="empty-state">{filesError}</div>
       )}
 
       {!loadingFiles &&
@@ -156,7 +155,10 @@ export default function MyFiles({
 
                       <ConfirmModal
                         className="btn btn-small btn-danger"
-                        message={`Delete "${getDisplayName(file.key)}"?\n\nThis file will no longer be available in the portal.`}
+                        title="تأكيد حذف الملف"
+                        description={<>سيُحذف الملف «<bdi>{getDisplayName(file.key)}</bdi>» ولن يكون متاحًا في البوابة. هل تريد المتابعة؟</>}
+                        confirmLabel="حذف الملف"
+                        returnFocusTo="#my-files h2"
                         canConfirm={canDelete}
                         onConfirm={() => onDelete(file)}
                         disabled={deletingKey === file.key}

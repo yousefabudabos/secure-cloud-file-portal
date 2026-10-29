@@ -7,14 +7,16 @@ import SharedWithMe from './components/SharedWithMe'
 import ExternalShares, { ExternalShareLink } from './components/ExternalShares'
 import InternalShareModal from './components/InternalShareModal'
 import ExternalShareModal from './components/ExternalShareModal'
-import Toast from './components/Toast'
+import ToastProvider from './components/ToastProvider'
+import { useToast } from './hooks/useToast'
 import ExternalDownloadPage from './pages/ExternalDownloadPage'
 import * as api from './services/api'
 import type { FileItem, SharedItem, ExternalShareItem } from './types'
 import { startDownload } from './utils/files'
 import './App.css'
 
-function App() {
+function AppContent() {
+  const { notify } = useToast()
   const auth = useAuth()
   const accessToken = auth.user?.access_token
 
@@ -24,13 +26,11 @@ function App() {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [uploadMessage, setUploadMessage] = useState('')
+  const [uploadValidationError, setUploadValidationError] = useState('')
 
   const [deletingKey, setDeletingKey] = useState('')
-  const [deleteMessage, setDeleteMessage] = useState('')
 
   const [sharingKey, setSharingKey] = useState('')
-  const [shareMessage, setShareMessage] = useState('')
 
   const [internalShareFile, setInternalShareFile] =
     useState<FileItem | null>(null)
@@ -44,7 +44,6 @@ function App() {
   const [sharedError, setSharedError] = useState('')
 
   const [externalSharingKey, setExternalSharingKey] = useState('')
-  const [externalShareMessage, setExternalShareMessage] = useState('')
 
   const [externalShareFile, setExternalShareFile] =
     useState<FileItem | null>(null)
@@ -117,10 +116,11 @@ function App() {
     } catch (error) {
       console.error(error)
       setFilesError('Unable to load files.')
+      notify('Unable to load files.', 'error')
     } finally {
       setLoadingFiles(false)
     }
-  }, [accessToken])
+  }, [accessToken, notify])
 
   const loadSharedFiles = useCallback(async () => {
     if (!accessToken) {
@@ -136,10 +136,11 @@ function App() {
     } catch (error) {
       console.error(error)
       setSharedError('Unable to load shared files.')
+      notify('Unable to load shared files.', 'error')
     } finally {
       setLoadingShared(false)
     }
-  }, [accessToken])
+  }, [accessToken, notify])
 
   const loadExternalShares = useCallback(async () => {
     if (!accessToken) {
@@ -154,13 +155,12 @@ function App() {
       setExternalShares(data.shares ?? [])
     } catch (error) {
       console.error(error)
-      setExternalSharesError(
-        'Unable to load external shares.',
-      )
+      setExternalSharesError('Unable to load external shares.')
+      notify('Unable to load external shares.', 'error')
     } finally {
       setLoadingExternalShares(false)
     }
-  }, [accessToken])
+  }, [accessToken, notify])
 
   useEffect(() => {
     if (!auth.isAuthenticated || !accessToken) {
@@ -191,24 +191,24 @@ function App() {
     const maxSize = 100 * 1024 * 1024
 
     if (selectedFile.size > maxSize) {
-      setUploadMessage('File exceeds the 100 MB limit.')
+      setUploadValidationError('File exceeds the 100 MB limit.')
       return
     }
 
     setUploading(true)
-    setUploadMessage('')
+    setUploadValidationError('')
 
     try {
       const uploadData = await api.requestUpload(auth.user.access_token, selectedFile)
       await api.uploadToStorage(uploadData.upload, selectedFile)
 
-      setUploadMessage('File uploaded successfully.')
+      notify('File uploaded successfully.', 'success')
       setSelectedFile(null)
 
       await loadFiles()
     } catch (error) {
       console.error(error)
-      setUploadMessage('Upload failed.')
+      notify('Upload failed.', 'error')
     } finally {
       setUploading(false)
     }
@@ -224,7 +224,7 @@ function App() {
       startDownload(data.downloadUrl)
     } catch (error) {
       console.error(error)
-      alert('Download failed.')
+      notify('Download failed.', 'error')
     }
   }
 
@@ -238,7 +238,7 @@ function App() {
       startDownload(data.downloadUrl)
     } catch (error) {
       console.error(error)
-      alert('Download failed.')
+      notify('Download failed.', 'error')
     }
   }
 
@@ -284,7 +284,6 @@ function App() {
 
     setExternalSharingKey(file.key)
     setExternalShareError('')
-    setExternalShareMessage('')
     setExternalShareUrl('')
     setExternalShareId('')
 
@@ -313,13 +312,9 @@ function App() {
       try {
         await navigator.clipboard.writeText(shareUrl)
 
-        setExternalShareMessage(
-          'تم إنشاء رابط المشاركة الخارجية ونسخه بنجاح.',
-        )
+        notify('تم إنشاء رابط المشاركة الخارجية ونسخه بنجاح.', 'success')
       } catch {
-        setExternalShareMessage(
-          'تم إنشاء رابط المشاركة الخارجية بنجاح.',
-        )
+        notify('تم إنشاء رابط المشاركة الخارجية بنجاح.', 'info')
       }
 
       setExternalShareFile(null)
@@ -349,9 +344,7 @@ function App() {
     try {
       await api.revokeExternalShare(auth.user.access_token, shareId)
 
-      setExternalShareMessage(
-        'External sharing link revoked successfully.',
-      )
+      notify('External sharing link revoked successfully.', 'success')
 
       if (shareId === externalShareId) {
         setExternalShareUrl('')
@@ -362,10 +355,9 @@ function App() {
     } catch (error) {
       console.error(error)
 
-      setExternalShareMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to revoke external sharing link.',
+      notify(
+        error instanceof Error ? error.message : 'Unable to revoke external sharing link.',
+        'error',
       )
     } finally {
       setRevokingExternalId('')
@@ -412,7 +404,6 @@ function App() {
     }
 
     setSharingKey(file.key)
-    setShareMessage('')
     setInternalShareError('')
 
     try {
@@ -423,13 +414,9 @@ function App() {
       )
 
       if (data.alreadyShared) {
-        setShareMessage(
-          `الملف مشارك مسبقًا مع ${recipientEmail}.`,
-        )
+        notify(`الملف مشارك مسبقًا مع ${recipientEmail}.`, 'info')
       } else {
-        setShareMessage(
-          `تمت مشاركة الملف بنجاح مع ${recipientEmail}.`,
-        )
+        notify(`تمت مشاركة الملف بنجاح مع ${recipientEmail}.`, 'success')
       }
 
       setInternalShareFile(null)
@@ -453,17 +440,16 @@ function App() {
     }
 
     setDeletingKey(file.key)
-    setDeleteMessage('')
 
     try {
       await api.deleteFile(auth.user.access_token, file.key)
 
-      setDeleteMessage('File deleted successfully.')
+      notify('File deleted successfully.', 'success')
 
       await loadFiles()
     } catch (error) {
       console.error(error)
-      setDeleteMessage('Delete failed.')
+      notify('Delete failed.', 'error')
     } finally {
       setDeletingKey('')
     }
@@ -546,28 +532,13 @@ function App() {
         <UploadCard
           selectedFile={selectedFile}
           uploading={uploading}
-          uploadMessage={uploadMessage}
-          onSelectFile={setSelectedFile}
+          uploadError={uploadValidationError}
+          onSelectFile={(file) => {
+            setSelectedFile(file)
+            setUploadValidationError('')
+          }}
           onUpload={handleUpload}
         />
-
-        {(shareMessage ||
-          deleteMessage ||
-          externalShareMessage) && (
-          <div className="messages-area">
-            {shareMessage && (
-              <Toast message={shareMessage} variant="success" />
-            )}
-
-            {deleteMessage && (
-              <Toast message={deleteMessage} />
-            )}
-
-            {externalShareMessage && (
-              <Toast message={externalShareMessage} variant="success" />
-            )}
-          </div>
-        )}
 
         {externalShareUrl && (
           <ExternalShareLink
@@ -657,4 +628,10 @@ function App() {
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
+  )
+}

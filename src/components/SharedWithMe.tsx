@@ -1,5 +1,4 @@
 import type { SharedItem } from '../types'
-import Toast from './Toast'
 
 type SharedWithMeProps = {
   sharedFiles: SharedItem[]
@@ -43,7 +42,7 @@ export default function SharedWithMe({
       )}
 
       {sharedError && (
-        <Toast message={sharedError} variant="error" />
+        <div className="empty-state">{sharedError}</div>
       )}
 
       {!loadingShared &&

@@ -1,6 +1,6 @@
+import { useToast } from '../hooks/useToast'
 import type { ExternalShareItem } from '../types'
 import ConfirmModal from './ConfirmModal'
-import Toast from './Toast'
 
 type ExternalSharesProps = {
   externalShares: ExternalShareItem[]
@@ -29,7 +29,7 @@ export default function ExternalShares({
           <span className="section-icon">⌁</span>
 
           <div>
-            <h2>المشاركات الخارجية</h2>
+            <h2 tabIndex={-1}>المشاركات الخارجية</h2>
             <p>
               إدارة روابط الملفات التي شاركتها خارج الشركة
             </p>
@@ -48,7 +48,7 @@ export default function ExternalShares({
       )}
 
       {externalSharesError && (
-        <Toast message={externalSharesError} variant="error" />
+        <div className="empty-state">{externalSharesError}</div>
       )}
 
       {!loadingExternalShares &&
@@ -135,7 +135,10 @@ export default function ExternalShares({
                     {share.status === 'active' ? (
                       <ConfirmModal
                         className="btn btn-small btn-danger-outline"
-                        message={'Revoke this external sharing link?\n\nThe recipient will no longer be able to use it.'}
+                        title="تأكيد إلغاء رابط المشاركة"
+                        description="لن يتمكن المستلم من استخدام هذا الرابط بعد إلغائه. هل تريد المتابعة؟"
+                        confirmLabel="إلغاء الرابط"
+                        returnFocusTo="#external-shares h2"
                         canConfirm={canRevoke && Boolean(share.shareId)}
                         onConfirm={() => onRevoke(share.shareId)}
                         disabled={revokingExternalId === share.shareId}
@@ -174,6 +177,17 @@ export function ExternalShareLink({
   canRevoke,
   onRevoke,
 }: ExternalShareLinkProps) {
+  const { notify } = useToast()
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(externalShareUrl)
+      notify('تم نسخ رابط المشاركة.', 'success')
+    } catch {
+      notify('تعذر نسخ الرابط. يمكنك نسخه من الحقل مباشرةً.', 'error')
+    }
+  }
+
   return (
     <section className="link-result-card">
       <div>
@@ -197,11 +211,7 @@ export function ExternalShareLink({
 
         <button
           className="btn btn-primary"
-          onClick={() =>
-            navigator.clipboard.writeText(
-              externalShareUrl,
-            )
-          }
+          onClick={copyLink}
         >
           نسخ الرابط
         </button>
@@ -219,7 +229,10 @@ export function ExternalShareLink({
       {externalShareId && (
         <ConfirmModal
           className="btn btn-danger-outline"
-          message={'Revoke this external sharing link?\n\nThe recipient will no longer be able to use it.'}
+          title="تأكيد إلغاء رابط المشاركة"
+          description="لن يتمكن المستلم من استخدام هذا الرابط بعد إلغائه. هل تريد المتابعة؟"
+          confirmLabel="إلغاء الرابط"
+          returnFocusTo="#external-shares h2"
           canConfirm={canRevoke && Boolean(externalShareId)}
           onConfirm={() => onRevoke(externalShareId)}
           disabled={revokingExternalId === externalShareId}
