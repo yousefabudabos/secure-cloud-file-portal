@@ -1,0 +1,356 @@
+[
+  [
+    "GET",
+    "/files",
+    null
+  ],
+  [
+    "GET",
+    "/shares",
+    null
+  ],
+  [
+    "GET",
+    "/external-shares",
+    null
+  ],
+  [
+    "POST",
+    "/downloads",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt"
+    }
+  ],
+  [
+    "POST",
+    "/downloads",
+    {
+      "key": "private/other/shared.txt"
+    }
+  ],
+  [
+    "POST",
+    "/downloads",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt"
+    }
+  ],
+  [
+    "POST",
+    "/uploads",
+    {
+      "fileName": "upload.txt",
+      "contentType": "text/plain"
+    }
+  ],
+  [
+    "POST",
+    "storage-upload",
+    [
+      [
+        "key",
+        null,
+        "fixture-upload.txt"
+      ],
+      [
+        "policy",
+        null,
+        "fixture-policy"
+      ],
+      [
+        "x-amz-algorithm",
+        null,
+        "AWS4-HMAC-SHA256"
+      ],
+      [
+        "file",
+        "upload.txt",
+        "fixture upload"
+      ]
+    ]
+  ],
+  [
+    "GET",
+    "/files",
+    null
+  ],
+  [
+    "POST",
+    "/uploads",
+    {
+      "fileName": "upload.txt",
+      "contentType": "application/octet-stream"
+    }
+  ],
+  [
+    "POST",
+    "storage-upload",
+    [
+      [
+        "key",
+        null,
+        "fixture-upload.txt"
+      ],
+      [
+        "policy",
+        null,
+        "fixture-policy"
+      ],
+      [
+        "x-amz-algorithm",
+        null,
+        "AWS4-HMAC-SHA256"
+      ],
+      [
+        "file",
+        "upload.txt",
+        "fixture upload"
+      ]
+    ]
+  ],
+  [
+    "GET",
+    "/files",
+    null
+  ],
+  [
+    "POST",
+    "/shares",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt",
+      "recipientEmail": "employee@example.test"
+    }
+  ],
+  [
+    "POST",
+    "/shares",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt",
+      "recipientEmail": "employee@example.test"
+    }
+  ],
+  [
+    "POST",
+    "/shares",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt",
+      "recipientEmail": "employee@example.test"
+    }
+  ],
+  [
+    "POST",
+    "/external-shares",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt",
+      "recipientEmail": "outside@example.test",
+      "expiresInHours": 72,
+      "maxDownloads": 3
+    }
+  ],
+  [
+    "POST",
+    "/external-shares",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt",
+      "recipientEmail": "outside@example.test",
+      "expiresInHours": 72,
+      "maxDownloads": 3
+    }
+  ],
+  [
+    "GET",
+    "/external-shares",
+    null
+  ],
+  [
+    "DELETE",
+    "/external-shares",
+    {
+      "shareId": "generated-share"
+    }
+  ],
+  [
+    "GET",
+    "/external-shares",
+    null
+  ],
+  [
+    "DELETE",
+    "/external-shares",
+    {
+      "shareId": "external-active"
+    }
+  ],
+  [
+    "DELETE",
+    "/external-shares",
+    {
+      "shareId": "external-active"
+    }
+  ],
+  [
+    "GET",
+    "/external-shares",
+    null
+  ],
+  [
+    "POST",
+    "/external-shares",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt",
+      "recipientEmail": "",
+      "expiresInHours": 24,
+      "maxDownloads": 5
+    }
+  ],
+  [
+    "GET",
+    "/external-shares",
+    null
+  ],
+  [
+    "DELETE",
+    "/files",
+    {
+      "key": "private/fixture/12345678-1234-1234-1234-123456789012-report.txt"
+    }
+  ],
+  [
+    "GET",
+    "/files",
+    null
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "hash-token"
+    }
+  ],
+  [
+    "POST",
+    "/external-download",
+    {
+      "token": "query-token"
+    }
+  ]
+]

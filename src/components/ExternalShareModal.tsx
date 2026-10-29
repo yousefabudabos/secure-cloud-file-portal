@@ -1,6 +1,5 @@
 import type { FileItem } from '../types'
 import { getDisplayName } from '../utils/files'
-import Toast from './Toast'
 
 type ExternalShareModalProps = {
   file: FileItem
@@ -106,6 +105,8 @@ export default function ExternalShareModal({
               autoFocus
               autoComplete="email"
               placeholder="name@external-company.com"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? 'ExternalShareModal-error' : undefined}
               value={recipientEmail}
               onChange={(event) => {
                 onRecipientEmailChange(event.target.value)
@@ -176,7 +177,7 @@ export default function ExternalShareModal({
           </div>
 
           {error && (
-            <Toast message={error} variant="error" />
+            <div id="ExternalShareModal-error" className="notice error" role="alert">{error}</div>
           )}
 
           <div className="modal-actions">

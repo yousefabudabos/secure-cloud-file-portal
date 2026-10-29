@@ -1,6 +1,5 @@
 import type { FileItem } from '../types'
 import { getDisplayName } from '../utils/files'
-import Toast from './Toast'
 
 type InternalShareModalProps = {
   file: FileItem
@@ -95,6 +94,8 @@ export default function InternalShareModal({
               autoFocus
               autoComplete="email"
               placeholder="employee@example.com"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? 'InternalShareModal-error' : undefined}
               value={recipientEmail}
               onChange={(event) => {
                 onRecipientEmailChange(event.target.value)
@@ -108,7 +109,7 @@ export default function InternalShareModal({
           </div>
 
           {error && (
-            <Toast message={error} variant="error" />
+            <div id="InternalShareModal-error" className="notice error" role="alert">{error}</div>
           )}
 
           <div className="modal-actions">

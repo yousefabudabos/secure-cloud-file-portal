@@ -1046,3 +1046,124 @@ input.form-input[dir="ltr"] {
     width: 100%;
   }
 }
+
+/* Destructive confirmations retain LISCO's dialog styling and native focus trap. */
+.confirm-modal {
+  margin: auto;
+  color: #253d5b;
+  text-align: start;
+  max-height: calc(100svh - 32px);
+}
+.confirm-modal::backdrop {
+  background: rgba(7, 24, 49, 0.58);
+  backdrop-filter: blur(5px);
+}
+.confirm-modal h2 { margin: 16px 0 12px; color: #10294f; font-size: 23px; }
+.confirm-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #f1c9ce;
+  border-radius: 14px;
+  background: #fff0f1;
+  color: #af2638;
+  font-size: 25px;
+  font-weight: 800;
+}
+.confirm-description { margin: 0; line-height: 1.9; overflow-wrap: anywhere; }
+.confirm-progress { color: #60728a; font-size: 13px; line-height: 1.7; }
+.confirm-progress:empty { display: none; }
+.confirm-actions .btn { min-width: 120px; }
+body:has(.confirm-modal[open]) { overflow: hidden; }
+.btn:focus-visible, .toast-close:focus-visible {
+  outline: 3px solid #2778ec;
+  outline-offset: 3px;
+}
+
+/* Bounded notifications stay below dialogs, with space to scroll controls clear. */
+.toast-viewport {
+  position: fixed;
+  z-index: 900;
+  inset-block-end: max(20px, env(safe-area-inset-bottom));
+  inset-inline-start: max(20px, env(safe-area-inset-right));
+  width: min(420px, calc(100vw - 40px));
+  max-height: min(36svh, 480px);
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 14px;
+  border: 1px solid #d5e1ef;
+  border-inline-start: 4px solid #1268e8;
+  border-radius: 14px;
+  color: #18304e;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(10, 36, 70, 0.14);
+  pointer-events: auto;
+  animation: modalFadeIn 0.16s ease;
+}
+.toast--success { border-inline-start-color: #168253; }
+.toast--error { border-inline-start-color: #c33148; }
+.toast-icon {
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 9px;
+  color: #1268e8;
+  background: #edf4ff;
+  font-weight: 800;
+}
+.toast--success .toast-icon { color: #137047; background: #eaf8f0; }
+.toast--error .toast-icon { color: #af2638; background: #fff0f1; }
+.toast-content { flex: 1; min-width: 0; padding-block-start: 3px; text-align: start; }
+.toast-content strong { font-size: 13px; }
+.toast-content p { margin: 5px 0 0; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.toast-close {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: #f1f5fa;
+  color: #4e6179;
+  font-size: 24px;
+  cursor: pointer;
+}
+.toast-close:hover { background: #e5edf7; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 620px) {
+  .toast-viewport {
+    inset-inline: 8px;
+    inset-block-end: max(8px, env(safe-area-inset-bottom));
+    width: auto;
+    max-height: 30svh;
+    gap: 8px;
+  }
+  .toast { padding: 10px; gap: 8px; }
+  .confirm-modal { width: calc(100% - 24px); }
+  .confirm-actions { flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confirm-modal, .toast { animation: none; }
+}

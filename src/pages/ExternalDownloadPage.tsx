@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Toast from '../components/Toast'
+import { useToast } from '../hooks/useToast'
 import ar from '../locales/ar'
 import en from '../locales/en'
 import * as api from '../services/api'
@@ -12,8 +12,7 @@ type ExternalDownloadPageProps = {
 
 export default function ExternalDownloadPage({ token }: ExternalDownloadPageProps) {
   const [externalDownloading, setExternalDownloading] = useState(false)
-  const [externalDownloadMessage, setExternalDownloadMessage] =
-    useState('')
+  const { notify } = useToast()
 
   const [externalLanguage, setExternalLanguage] =
     useState<ExternalLanguage>(() => {
@@ -51,14 +50,15 @@ export default function ExternalDownloadPage({ token }: ExternalDownloadPageProp
     }
 
     setExternalDownloading(true)
-    setExternalDownloadMessage('')
 
     try {
       const data = await api.getExternalDownload(token)
       startDownload(data.downloadUrl)
 
-      setExternalDownloadMessage(
+      notify(
         externalText.started(data.downloadCount, data.maxDownloads),
+        'success',
+        { language: externalLanguage },
       )
     } catch (error) {
       console.error(error)
@@ -68,11 +68,12 @@ export default function ExternalDownloadPage({ token }: ExternalDownloadPageProp
           ? error.message
           : en.externalDownload.unknownError
 
-      setExternalDownloadMessage(
+      notify(
         externalLanguage === 'ar'
-          ? ar.externalDownload.errors[rawMessage] ||
-              ar.externalDownload.unknownError
+          ? ar.externalDownload.errors[rawMessage] || ar.externalDownload.unknownError
           : rawMessage,
+        'error',
+        { language: externalLanguage },
       )
     } finally {
       setExternalDownloading(false)
@@ -140,10 +141,6 @@ export default function ExternalDownloadPage({ token }: ExternalDownloadPageProp
             ? externalText.preparing
             : externalText.download}
         </button>
-
-        {externalDownloadMessage && (
-          <Toast message={externalDownloadMessage} variant="external-message" />
-        )}
 
         <div className="security-note">
           🔒 {externalText.security}

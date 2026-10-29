@@ -1,9 +1,7 @@
-import Toast from './Toast'
-
 type UploadCardProps = {
   selectedFile: File | null
   uploading: boolean
-  uploadMessage: string
+  uploadError: string
   onSelectFile: (file: File | null) => void
   onUpload: () => Promise<void>
 }
@@ -11,7 +9,7 @@ type UploadCardProps = {
 export default function UploadCard({
   selectedFile,
   uploading,
-  uploadMessage,
+  uploadError,
   onSelectFile,
   onUpload,
 }: UploadCardProps) {
@@ -47,6 +45,8 @@ export default function UploadCard({
         <input
           className="file-input"
           type="file"
+          aria-invalid={Boolean(uploadError)}
+          aria-describedby={uploadError ? 'upload-error' : undefined}
           onChange={(event) =>
             onSelectFile(
               event.target.files?.[0] ?? null,
@@ -91,11 +91,8 @@ export default function UploadCard({
         </div>
       )}
 
-      {uploadMessage && (
-        <Toast
-          message={uploadMessage}
-          variant={uploadMessage.includes('successfully') ? 'success' : 'error'}
-        />
+      {uploadError && (
+        <div id="upload-error" className="notice error" role="alert">{uploadError}</div>
       )}
     </section>
   )
