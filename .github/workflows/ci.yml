@@ -55,7 +55,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install 'playwright>=1.50,<2'
           python -m playwright install --with-deps chromium
-          echo "CHROMIUM_PATH=$(python -c \"from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()\")" >> "$GITHUB_ENV"
+          python - <<'PY' >> "$GITHUB_ENV"
+          from playwright.sync_api import sync_playwright
+          p = sync_playwright().start()
+          print(f"CHROMIUM_PATH={p.chromium.executable_path}")
+          p.stop()
+          PY
 
       - name: Start Vite test server
         run: |
