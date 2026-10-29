@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      VITE_COGNITO_AUTHORITY: https://cognito-idp.eu-central-1.amazonaws.com/eu-central-1_test
+      VITE_COGNITO_CLIENT_ID: test-client
+      VITE_COGNITO_DOMAIN: https://test.auth.eu-central-1.amazoncognito.com
+      VITE_APP_URL: http://127.0.0.1:5173/
+      VITE_API_URL: https://fixture.execute-api.eu-central-1.amazonaws.com
+      PORTAL_TEST_URL: http://127.0.0.1:5173
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Playwright and Chromium
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'playwright>=1.50,<2'
+          python -m playwright install --with-deps chromium
+          python - <<'PY' >> "$GITHUB_ENV"
+          from playwright.sync_api import sync_playwright
+          p = sync_playwright().start()
+          print(f"CHROMIUM_PATH={p.chromium.executable_path}")
+          p.stop()
+          PY
+
+      - name: Start Vite test server
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 5173 --strictPort > /tmp/vite.log 2>&1 &
+          echo $! > /tmp/vite.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/vite.log
+          exit 1
+
+      - name: Run mocked browser checks
+        run: |
+          python tests/browser/auth_resources.py
+          python tests/browser/regression.py
+          python -m unittest discover -s tests/browser -p 'test_*.py' -v
+
+      - name: Show Vite log on failure
+        if: failure()
+        run: cat /tmp/vite.log || true
